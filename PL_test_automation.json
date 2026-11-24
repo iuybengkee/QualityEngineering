@@ -1,0 +1,338 @@
+{
+    "name": "PL_test_automation",
+    "properties": {
+        "description": "sss",
+        "activities": [
+            {
+                "name": "Lookup",
+                "type": "Lookup",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "DelimitedTextSource",
+                        "storeSettings": {
+                            "type": "AzureBlobFSReadSettings",
+                            "recursive": true,
+                            "enablePartitionDiscovery": false
+                        },
+                        "formatSettings": {
+                            "type": "DelimitedTextReadSettings"
+                        }
+                    },
+                    "dataset": {
+                        "referenceName": "DS_Test_Automation",
+                        "type": "DatasetReference"
+                    },
+                    "firstRowOnly": false
+                }
+            },
+            {
+                "name": "Notebook",
+                "type": "DatabricksNotebook",
+                "dependsOn": [
+                    {
+                        "activity": "Lookup",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    },
+                    {
+                        "activity": "Set current time",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "7.00:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "notebookPath": {
+                        "value": "@string('/notebooks/bronze_silverRaw/SCDTypeII/Csv/TestAutomationClassRevised')",
+                        "type": "Expression"
+                    },
+                    "baseParameters": {
+                        "secretScopeName": {
+                            "value": "@string(activity('Lookup').output.value[0].value)",
+                            "type": "Expression"
+                        },
+                        "tenantIdSecretReference": {
+                            "value": "@string(activity('Lookup').output.value[1].value)",
+                            "type": "Expression"
+                        },
+                        "dataLakeServicePrincipalClientIdSecretReference": {
+                            "value": "@string(activity('Lookup').output.value[2].value)",
+                            "type": "Expression"
+                        },
+                        "dataLakeServicePrincipalClientSecretSecretReference": {
+                            "value": "@string(activity('Lookup').output.value[3].value)",
+                            "type": "Expression"
+                        },
+                        "SQLUserName": {
+                            "value": "@string(activity('Lookup').output.value[4].value)",
+                            "type": "Expression"
+                        },
+                        "SQLPassword": {
+                            "value": "@string(activity('Lookup').output.value[5].value)",
+                            "type": "Expression"
+                        },
+                        "tenantName": {
+                            "value": "@string(activity('Lookup').output.value[6].value)",
+                            "type": "Expression"
+                        },
+                        "SharePointSiteURL": {
+                            "value": "@string(activity('Lookup').output.value[7].value)",
+                            "type": "Expression"
+                        },
+                        "SharePointRelativeURL": {
+                            "value": "@string(activity('Lookup').output.value[8].value)",
+                            "type": "Expression"
+                        },
+                        "SharePointFolderName": {
+                            "value": "@string(activity('Lookup').output.value[9].value)",
+                            "type": "Expression"
+                        },
+                        "SQLdatabaseURL": {
+                            "value": "@string(activity('Lookup').output.value[10].value)",
+                            "type": "Expression"
+                        },
+                        "SQLTableName": {
+                            "value": "@string(activity('Lookup').output.value[11].value)",
+                            "type": "Expression"
+                        },
+                        "SQLTemplateTable": {
+                            "value": "@string(activity('Lookup').output.value[12].value)",
+                            "type": "Expression"
+                        },
+                        "SQLLogTable": {
+                            "value": "@string(activity('Lookup').output.value[13].value)",
+                            "type": "Expression"
+                        },
+                        "projectName": {
+                            "value": "@pipeline().parameters.projectName",
+                            "type": "Expression"
+                        },
+                        "remarks": {
+                            "value": "@pipeline().parameters.remarks",
+                            "type": "Expression"
+                        },
+                        "storageAccountName": {
+                            "value": "@string(activity('Lookup').output.value[14].value)",
+                            "type": "Expression"
+                        },
+                        "dimFactTables": {
+                            "value": "@pipeline().parameters.dimFactTables",
+                            "type": "Expression"
+                        },
+                        "testCaseID": {
+                            "value": "@pipeline().parameters.testCaseID",
+                            "type": "Expression"
+                        },
+                        "dimFactSchema": {
+                            "value": "@pipeline().parameters.schema",
+                            "type": "Expression"
+                        },
+                        "currentTime": {
+                            "value": "@variables('current_time')",
+                            "type": "Expression"
+                        }
+                    }
+                },
+                "linkedServiceName": {
+                    "referenceName": "databricks_managedIdentity001",
+                    "type": "LinkedServiceReference"
+                }
+            },
+            {
+                "name": "STTM SP",
+                "type": "SqlServerStoredProcedure",
+                "dependsOn": [
+                    {
+                        "activity": "Notebook",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "storedProcedureName": {
+                        "value": "@string(activity('Lookup').output.value[17].value)",
+                        "type": "Expression"
+                    }
+                },
+                "linkedServiceName": {
+                    "referenceName": "LS_sqlServer_sqlAuthentication001",
+                    "type": "LinkedServiceReference",
+                    "parameters": {
+                        "sourceConnectionStringSecretReference": {
+                            "value": "@string(activity('Lookup').output.value[16].value)",
+                            "type": "Expression"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "MAIN SP",
+                "type": "SqlServerStoredProcedure",
+                "dependsOn": [
+                    {
+                        "activity": "STTM SP",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "storedProcedureName": {
+                        "value": "@string(activity('Lookup').output.value[18].value)",
+                        "type": "Expression"
+                    },
+                    "storedProcedureParameters": {
+                        "i_proj_name": {
+                            "value": {
+                                "value": "@pipeline().parameters.projectName",
+                                "type": "Expression"
+                            },
+                            "type": "String"
+                        },
+                        "i_remarks": {
+                            "value": {
+                                "value": "@pipeline().parameters.remarks",
+                                "type": "Expression"
+                            },
+                            "type": "String"
+                        },
+                        "i_schema_name": {
+                            "value": {
+                                "value": "@pipeline().parameters.schema",
+                                "type": "Expression"
+                            },
+                            "type": "String"
+                        },
+                        "i_table_name": {
+                            "value": {
+                                "value": "@pipeline().parameters.dimFactTables",
+                                "type": "Expression"
+                            },
+                            "type": "String"
+                        },
+                        "i_test_case_id": {
+                            "value": {
+                                "value": "@pipeline().parameters.testCaseID",
+                                "type": "Expression"
+                            },
+                            "type": "String"
+                        },
+                        "i_current_time": {
+                            "value": {
+                                "value": "@variables('current_time')",
+                                "type": "Expression"
+                            },
+                            "type": "String"
+                        },
+                        "i_tester_name": {
+                            "value": {
+                                "value": "@pipeline().parameters.testerName",
+                                "type": "Expression"
+                            },
+                            "type": "String"
+                        }
+                    }
+                },
+                "linkedServiceName": {
+                    "referenceName": "LS_sqlServer_sqlAuthentication001",
+                    "type": "LinkedServiceReference",
+                    "parameters": {
+                        "sourceConnectionStringSecretReference": {
+                            "value": "@string(activity('Lookup').output.value[16].value)",
+                            "type": "Expression"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "Set current time",
+                "type": "SetVariable",
+                "dependsOn": [],
+                "policy": {
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "variableName": "current_time",
+                    "value": {
+                        "value": "@utcnow()",
+                        "type": "Expression"
+                    }
+                }
+            }
+        ],
+        "parameters": {
+            "projectName": {
+                "type": "string",
+                "defaultValue": "BSP"
+            },
+            "remarks": {
+                "type": "string",
+                "defaultValue": "Test DimReport"
+            },
+            "dimFactTables": {
+                "type": "string",
+                "defaultValue": "DimReport"
+            },
+            "testCaseID": {
+                "type": "string",
+                "defaultValue": "all"
+            },
+            "schema": {
+                "type": "string",
+                "defaultValue": "EDW"
+            },
+            "testerName": {
+                "type": "string",
+                "defaultValue": "Irene"
+            }
+        },
+        "variables": {
+            "current_time": {
+                "type": "String"
+            }
+        },
+        "folder": {
+            "name": "test_automation"
+        },
+        "annotations": [],
+        "lastPublishTime": "2021-08-17T20:30:30Z"
+    },
+    "type": "Microsoft.DataFactory/factories/pipelines"
+}
